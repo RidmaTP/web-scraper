@@ -57,13 +57,17 @@ func RateLimitMiddleware() gin.HandlerFunc {
 	}
 }
 
-
 func CleanupUsers() {
-	mu.Lock()
-	defer mu.Unlock()
-	for ip, sessionLimiter := range ipLimiter {
-		if time.Since(sessionLimiter.lastSeen) > 10*time.Minute {
-			delete(ipLimiter, ip)
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		mu.Lock()
+		for ip, sessionLimiter := range ipLimiter {
+			if time.Since(sessionLimiter.lastSeen) > 10*time.Minute {
+				delete(ipLimiter, ip)
+			}
 		}
+		mu.Unlock()
 	}
 }
