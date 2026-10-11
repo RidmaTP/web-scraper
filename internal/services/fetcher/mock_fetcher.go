@@ -26,6 +26,13 @@ func (f *MockFetcher) FetchBody(_ context.Context, url string) (io.ReadCloser, e
 	return io.NopCloser(strings.NewReader(f.ResponseBody)), nil
 }
 
+func (f *MockFetcher) FetchLink(_ context.Context, _ string) error {
+	if f.ForceErr {
+		return errors.New("mock err")
+	}
+	return nil
+}
+
 type ErrorReader struct{}
 
 func (e *ErrorReader) Read(p []byte) (int, error) {

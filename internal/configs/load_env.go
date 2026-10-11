@@ -11,6 +11,7 @@ var (
 	loadEnvOnce sync.Once
 	version     string
 	port        string
+	chromePath  string
 )
 
 // load env in config pkg idempotently with sync.once
@@ -24,6 +25,7 @@ func LoadEnv() error {
 
 		version = os.Getenv("APP_VERSION")
 		port = os.Getenv("PORT")
+		chromePath = os.Getenv("CHROME_PATH")
 	})
 	if loadErr != nil {
 		return loadErr
@@ -32,7 +34,7 @@ func LoadEnv() error {
 }
 
 func GetAppVersion() string {
-	if version == ""{
+	if version == "" {
 		LoadEnv()
 	}
 	return version
@@ -43,4 +45,11 @@ func GetPort() string {
 		LoadEnv()
 	}
 	return port
+}
+
+func GetChromePath() string {
+	if chromePath == "" {
+		LoadEnv()
+	}
+	return chromePath
 }

@@ -50,10 +50,7 @@ func (a *BodyAnalyzer) ActiveCheckWorker(baseURL string, linkJobQueue *chan stri
 func (a *BodyAnalyzer) ActiveCheckWorkerContext(ctx context.Context, baseURL string, linkJobQueue chan string) {
 	for link := range linkJobQueue {
 		link = utils.AddInternalHost(link, baseURL)
-		body, err := a.fetchBody(ctx, link)
-		if body != nil {
-			body.Close()
-		}
+		err := a.checkLink(ctx, link)
 
 		a.muOutput.Lock()
 		if err != nil {
