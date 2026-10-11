@@ -2,13 +2,11 @@ package handlers
 
 import (
 	"fmt"
-	"runtime"
 	"time"
 
 	"github.com/RidmaTP/web-analyzer/internal/configs"
-	"github.com/RidmaTP/web-analyzer/internal/analyzers"
-	"github.com/RidmaTP/web-analyzer/internal/fetcher"
 	"github.com/RidmaTP/web-analyzer/internal/models"
+	"github.com/RidmaTP/web-analyzer/internal/services/analyzer"
 	"github.com/RidmaTP/web-analyzer/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/patrickmn/go-cache"
@@ -26,12 +24,7 @@ func GetResultsHandler(c *gin.Context) {
 	c.Writer.Flush()
 
 	ctx := c.Request.Context()
-	a := analyzers.BodyAnalyzer{
-		Fetcher: &fetcher.Fetcher{},
-		Stream:  make(chan string, 20),
-		Output:  models.Output{},
-		Workers: runtime.NumCPU(),
-	}
+	a := analyzer.NewBodyAnalyzer()
 
 	errObj := utils.UrlValidationCheck(&url)
 	if errObj != nil {
@@ -51,16 +44,18 @@ func GetResultsHandler(c *gin.Context) {
 		return
 	}
 
-	errChan := make(chan *models.ErrorOut)
+	errChan := make(chan *models.ErrorOut, 1)
 
 	go func(cache *cache.Cache) {
 		defer close(a.Stream)
-		errObj := a.Analyze(url)
+		errObj := a.Analyze(ctx, url)
 		if errObj != nil {
 			errChan <- errObj
+			return
 		}
-		strObj, _ := utils.JsonToText(a.Output)
-		cache.Set(url, *strObj, 2*time.Hour)
+		if strObj, err := utils.JsonToText(a.Output); err == nil {
+			cache.Set(url, *strObj, 2*time.Hour)
+		}
 
 	}(cacheObj)
 	for {

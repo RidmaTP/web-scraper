@@ -1,12 +1,13 @@
-package analyzers
+package analyzer
 
 import (
+	"context"
 	"encoding/json"
 	"sync"
 	"testing"
 
-	"github.com/RidmaTP/web-analyzer/internal/fetcher"
 	"github.com/RidmaTP/web-analyzer/internal/models"
+	"github.com/RidmaTP/web-analyzer/internal/services/fetcher"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/html"
 )
@@ -49,7 +50,7 @@ func Test_Analyze(t *testing.T) {
 				Output: models.Output{},
 			}
 
-			err := ba.Analyze("")
+			err := ba.Analyze(context.Background(), "")
 			if (err != nil) != tt.expectErr {
 				t.Fatalf("Analyze() error = %v, expectErr %v", err, tt.expectErr)
 			}
@@ -120,7 +121,7 @@ func Test_Analyze_Err(t *testing.T) {
 				Output: models.Output{},
 			}
 
-			err := ba.Analyze("")
+			err := ba.Analyze(context.Background(), "")
 			assert.Equal(t, tt.expectErr, err != nil)
 
 			close(ba.Stream)
