@@ -25,26 +25,12 @@ cd cmd/server
 go run main.go
 ```
 
-### Frontend Client (Port : 5173)
-
-For the client application, navigate to the client repository ( https://github.com/RidmaTP/web-analyzer-fe ) and follow these instructions:
 
 #### Using Docker Compose
 ```bash
 docker-compose up
 ```
 
-#### Using npm
-```bash
-npm i
-npm run dev
-```
-
-## Demo Video and Diagrams
-
-**Diagrams** - https://drive.google.com/file/d/159YV28JE_6vVQCKBNRbDgwfxgJG0bknC/view?usp=sharing
-
-**Video** - https://drive.google.com/file/d/11enzM2bCFviYz_bWyt5sESjXvyJ1uPti/view?usp=sharing
 
 ## API Usage
 
