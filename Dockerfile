@@ -1,4 +1,6 @@
-FROM golang:1.24.4 AS builder
+FROM golang:1.26.0-alpine AS builder
+
+RUN apk add --no-cache chromium ca-certificates
 
 WORKDIR /app
 
