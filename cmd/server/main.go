@@ -12,6 +12,7 @@ import (
 	"github.com/RidmaTP/web-analyzer/internal/api"
 	"github.com/RidmaTP/web-analyzer/internal/api/middleware"
 	"github.com/RidmaTP/web-analyzer/internal/configs"
+	"github.com/RidmaTP/web-analyzer/internal/observability"
 	"github.com/RidmaTP/web-analyzer/internal/services/fetcher"
 	"github.com/gin-gonic/gin"
 )
@@ -28,6 +29,17 @@ func main() {
 	}
 	configs.LoadLogger()
 	configs.LoadCacheConfig()
+	tracerProvider, err := observability.InitTracer(context.Background(), "web-analyzer")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := tracerProvider.Shutdown(shutdownCtx); err != nil {
+			log.Printf("unable to shut down tracer provider: %v", err)
+		}
+	}()
 	if err := fetcher.LaunchBrowser(configs.GetChromePath()); err != nil {
 		log.Fatal(err)
 	}

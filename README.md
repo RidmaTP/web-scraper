@@ -16,7 +16,7 @@ A web crawler application designed to scrape and analyze web page data, includin
 
 #### Using Docker Compose
 ```bash
-docker-compose up
+docker compose up
 ```
 
 #### Using Go directly
@@ -31,7 +31,7 @@ For the client application, navigate to the client repository ( https://github.c
 
 #### Using Docker Compose
 ```bash
-docker-compose up
+docker compose up
 ```
 
 #### Using npm

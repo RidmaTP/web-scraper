@@ -1,31 +1,26 @@
 package configs
 
 import (
+	"log/slog"
 	"os"
 	"sync"
-
-	"github.com/sirupsen/logrus"
 )
 
-// logrus loader into stdout
 var (
 	loadLoggerOnce sync.Once
-	logger         *logrus.Logger
+	logger         *slog.Logger
 )
 
-func LoadLogger() *logrus.Logger {
+func LoadLogger() *slog.Logger {
 	loadLoggerOnce.Do(func() {
-		logger = logrus.New()
-		logger.SetOutput(os.Stdout)
-		logger.SetFormatter(&logrus.TextFormatter{
-			FullTimestamp: true,
-		})
-
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		}))
 	})
 	return logger
 }
 
-func GetLogger() *logrus.Logger {
+func GetLogger() *slog.Logger {
 	if logger == nil {
 		LoadLogger()
 	}

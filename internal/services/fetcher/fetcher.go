@@ -7,6 +7,9 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type Fetcher struct {
@@ -27,6 +30,8 @@ func (f *Fetcher) FetchBody(ctx context.Context, url string) (io.ReadCloser, err
 }
 
 func (f *Fetcher) FetchLink(ctx context.Context, url string) error {
+	ctx, span := otel.Tracer("web-analyzer/fetcher").Start(ctx, "http.link_request")
+	defer span.End()
 	client := f.Client
 	if client == nil {
 		client = &http.Client{Timeout: 15 * time.Second}
@@ -38,11 +43,16 @@ func (f *Fetcher) FetchLink(ctx context.Context, url string) error {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "HTTP link request failed")
 		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("link returned status %d", resp.StatusCode)
+		err := fmt.Errorf("link returned status %d", resp.StatusCode)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "HTTP link request returned error")
+		return err
 	}
 	return nil
 }

@@ -3,17 +3,23 @@ package api
 import (
 	"net/http"
 
-	"github.com/RidmaTP/web-analyzer/internal/configs"
 	"github.com/RidmaTP/web-analyzer/internal/api/handlers"
 	"github.com/RidmaTP/web-analyzer/internal/api/middleware"
+	"github.com/RidmaTP/web-analyzer/internal/configs"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-//defines all the routes
+// defines all the routes
 func Router(engine *gin.Engine) {
 	engine.Use(cors.Default())
+	engine.Use(middleware.RequestIDMiddleware)
+	engine.Use(middleware.TracingMiddleware)
+
 	
+	engine.Use(middleware.MetricsMiddleware)
+	engine.GET("/metrics", middleware.MetricsHandler())
+
 	group := engine.Group("/api/")
 	group.Use(middleware.LogMiddleware)
 	group.Use(middleware.RateLimitMiddleware())
@@ -27,7 +33,6 @@ func routes(rg *gin.RouterGroup) {
 			"status":  "success",
 			"version": configs.GetAppVersion()})
 	})
-
-	rg.GET("/result" , handlers.GetResultsHandler)
+	rg.GET("/result", handlers.GetResultsHandler)
 
 }
