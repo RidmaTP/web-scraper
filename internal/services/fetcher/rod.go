@@ -16,7 +16,7 @@ var (
 	browser   *rod.Browser
 )
 
-func (f *Fetcher) fetchHTMLBodyRod(ctx context.Context, url string) (*string, error){
+func (f *Fetcher) fetchHTMLBodyRod(ctx context.Context, url string) (*string, error) {
 	timeout := f.BrowserTimeout
 	if timeout <= 0 {
 		timeout = 30 * time.Second
@@ -45,6 +45,16 @@ func (f *Fetcher) fetchHTMLBodyRod(ctx context.Context, url string) (*string, er
 	if err := page.WaitLoad(); err != nil {
 		return nil, fmt.Errorf("rod page load failed: %w", err)
 	}
+	// mainElement, err := page.Element("main")
+	// if err != nil {
+	// 	return nil, fmt.Errorf("rod main element lookup failed: %w", err)
+	// }
+	// if mainElement == nil {
+	// 	return nil, fmt.Errorf("rod main element not found")
+	// }
+	// if err := mainElement.WaitVisible(); err != nil {
+	// 	return nil, fmt.Errorf("rod main element visibility wait failed: %w", err)
+	// }
 	body, err := page.HTML()
 	if err != nil {
 		return nil, fmt.Errorf("rod body extraction failed: %w", err)

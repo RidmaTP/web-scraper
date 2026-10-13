@@ -12,6 +12,7 @@ import (
 	"github.com/RidmaTP/web-analyzer/internal/api"
 	"github.com/RidmaTP/web-analyzer/internal/api/middleware"
 	"github.com/RidmaTP/web-analyzer/internal/configs"
+	"github.com/RidmaTP/web-analyzer/internal/observability"
 	"github.com/RidmaTP/web-analyzer/internal/services/fetcher"
 	"github.com/gin-gonic/gin"
 )
@@ -28,10 +29,29 @@ func main() {
 	}
 	configs.LoadLogger()
 	configs.LoadCacheConfig()
+
+	ctx := context.Background()
+	meterProvider, metrics, tracerProvider, err := observability.Initialize(ctx)
+	if err != nil {
+		log.Fatalf("failed to initialize observability: %v", err)
+	}
+
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		if err := meterProvider.Shutdown(shutdownCtx); err != nil {
+			log.Printf("failed to shut down meter provider: %v", err)
+		}
+		if err := tracerProvider.Shutdown(shutdownCtx); err != nil {
+			log.Printf("failed to shut down tracer provider: %v", err)
+		}
+	}()
 	if err := fetcher.LaunchBrowser(configs.GetChromePath()); err != nil {
 		log.Fatal(err)
 	}
-	api.Router(app)
+	tracer := tracerProvider.Tracer("web-analyzer")
+	api.Router(app, metrics, tracer)
 
 	server := &http.Server{
 		Addr:    ":" + configs.GetPort(),

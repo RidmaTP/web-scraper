@@ -10,7 +10,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "Prometheus Targets Up",
+      "title": "Total Requests",
       "type": "stat",
       "datasource": {
         "type": "prometheus",
@@ -18,8 +18,30 @@
       },
       "targets": [
         {
-          "expr": "up",
-          "legendFormat": "{{job}} - {{instance}}",
+          "expr": "web_scraper_requests_total",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Errors",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "web_scraper_errors_total",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
@@ -31,17 +53,79 @@
       }
     },
     {
-      "id": 2,
-      "title": "Scrape Samples Processed",
+      "id": 7,
+      "title": "Request Duration",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
       "targets": [
         {
-          "expr": "scrape_samples_scraped",
-          "legendFormat": "{{job}}",
+          "expr": "1000 * rate(web_scraper_request_duration_seconds_sum[5m]) / rate(web_scraper_request_duration_seconds_count[5m])",
+          "legendFormat": "{{http_route}} - {{http_request_method}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      }
+    },
+    {
+      "id": 3,
+      "title": "Heap Allocated",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "web_scraper_memory_heap_alloc_bytes",
+          "legendFormat": "Heap allocated",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 6,
+      "title": "Goroutines",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "web_scraper_runtime_goroutines",
+          "legendFormat": "Goroutines",
           "refId": "A"
         }
       ],
@@ -49,7 +133,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 24
       }
     }
   ]
