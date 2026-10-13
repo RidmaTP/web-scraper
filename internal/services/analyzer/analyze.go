@@ -9,6 +9,8 @@ import (
 
 	"github.com/RidmaTP/web-analyzer/internal/models"
 	"github.com/RidmaTP/web-analyzer/internal/services/fetcher"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"golang.org/x/net/html"
 )
 
@@ -18,11 +20,25 @@ type BodyFetcher interface {
 }
 
 func (a *BodyAnalyzer) fetchBody(ctx context.Context, url string) (io.ReadCloser, error) {
-	return a.Fetcher.FetchBody(ctx, url)
+	ctx, span := otel.Tracer("web-analyzer/analyzer").Start(ctx, "analyzer.fetch_body")
+	defer span.End()
+	body, err := a.Fetcher.FetchBody(ctx, url)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "body fetch failed")
+	}
+	return body, err
 }
 
 func (a *BodyAnalyzer) checkLink(ctx context.Context, url string) error {
-	return a.Fetcher.FetchLink(ctx, url)
+	ctx, span := otel.Tracer("web-analyzer/analyzer").Start(ctx, "analyzer.check_link")
+	defer span.End()
+	err := a.Fetcher.FetchLink(ctx, url)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "link check failed")
+	}
+	return err
 }
 
 type BodyAnalyzer struct {
@@ -48,6 +64,10 @@ func NewBodyAnalyzer() *BodyAnalyzer {
 
 // Analyze runs the analysis and supports cancellation through the request context.
 func (a *BodyAnalyzer) Analyze(ctx context.Context, url string) *models.ErrorOut {
+	ctx, span := otel.Tracer("web-analyzer/analyzer").Start(ctx, "analyzer.analyze")
+	defer span.End()
+	ctx, parseSpan := otel.Tracer("web-analyzer/analyzer").Start(ctx, "analyzer.parse_html")
+	defer parseSpan.End()
 	var inTitle bool
 	a.wg = &sync.WaitGroup{}
 	a.ctx = ctx
