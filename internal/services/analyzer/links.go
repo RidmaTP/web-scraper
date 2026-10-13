@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/RidmaTP/web-analyzer/internal/utils"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/net/html"
 )
 
@@ -50,7 +51,13 @@ func (a *BodyAnalyzer) ActiveCheckWorker(baseURL string, linkJobQueue *chan stri
 func (a *BodyAnalyzer) ActiveCheckWorkerContext(ctx context.Context, baseURL string, linkJobQueue chan string) {
 	for link := range linkJobQueue {
 		link = utils.AddInternalHost(link, baseURL)
-		err := a.checkLink(ctx, link)
+		linkCtx, span := a.getTracer().Start(ctx, "check link")
+		span.SetAttributes(attribute.String("url.full", link))
+		err := a.checkLink(linkCtx, link)
+		if err != nil {
+			span.RecordError(err)
+		}
+		span.End()
 
 		a.muOutput.Lock()
 		if err != nil {

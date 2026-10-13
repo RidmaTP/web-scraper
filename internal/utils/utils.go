@@ -1,10 +1,13 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"strings"
 
@@ -57,12 +60,12 @@ func AddInternalHost(link, baseUrl string) string {
 }
 
 func UrlValidationCheck(input *string) *models.ErrorOut {
-	
-	if len(strings.Split( *input, "://")) == 1 {
-		 *input = "https://" +  *input
+
+	if len(strings.Split(*input, "://")) == 1 {
+		*input = "https://" + *input
 	}
 	errOut := models.ErrorOut{StatusCode: http.StatusBadRequest, Error: "invalid url"}
-	parsedVal, err := url.ParseRequestURI( *input)
+	parsedVal, err := url.ParseRequestURI(*input)
 	if err != nil {
 		return &errOut
 	}
@@ -88,4 +91,65 @@ func UrlValidationCheck(input *string) *models.ErrorOut {
 	}
 
 	return nil
+}
+
+// ValidateInitialURL applies the SSRF policy to the URL that will be opened by Rod.
+func ValidateInitialURL(ctx context.Context, input string) *models.ErrorOut {
+	parsed, err := url.Parse(input)
+	if err != nil || parsed.Hostname() == "" {
+		return &models.ErrorOut{StatusCode: http.StatusBadRequest, Error: "invalid url"}
+	}
+
+	if ip, err := netip.ParseAddr(parsed.Hostname()); err == nil {
+		if isBlockedIP(ip) {
+			return &models.ErrorOut{StatusCode: http.StatusBadRequest, Error: "url destination is not allowed"}
+		}
+		return nil
+	}
+
+	ips, err := net.DefaultResolver.LookupNetIP(ctx, "ip", parsed.Hostname())
+	if err != nil {
+		return &models.ErrorOut{StatusCode: http.StatusBadRequest, Error: "url host could not be resolved"}
+	}
+	for _, ip := range ips {
+		if isBlockedIP(ip) {
+			return &models.ErrorOut{StatusCode: http.StatusBadRequest, Error: "url destination is not allowed"}
+		}
+	}
+	return nil
+}
+
+func isBlockedIP(ip netip.Addr) bool {
+	if !ip.IsValid() {
+		return true
+	}
+	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() ||
+		ip.IsLinkLocalMulticast() || ip.IsMulticast() || ip.IsUnspecified() ||
+		ip.IsInterfaceLocalMulticast() {
+		return true
+	}
+
+	blockedPrefixes := []string{
+		"0.0.0.0/8",
+		"100.64.0.0/10",
+		"192.0.0.0/24",
+		"192.0.2.0/24",
+		"198.18.0.0/15",
+		"198.51.100.0/24",
+		"203.0.113.0/24",
+		"240.0.0.0/4",
+		"::/128",
+		"64:ff9b::/96",
+		"100::/64",
+		"2001:db8::/32",
+		"2001::/32",
+		"fc00::/7",
+	}
+	for _, prefix := range blockedPrefixes {
+		network, err := netip.ParsePrefix(prefix)
+		if err == nil && network.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }

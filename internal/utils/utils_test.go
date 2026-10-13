@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -70,7 +71,7 @@ func TestErrStreamObj(t *testing.T) {
 	}{
 		{
 			name:      "valid output",
-			input:     models.ErrorOut{StatusCode: 400 , Error: "bad request"},
+			input:     models.ErrorOut{StatusCode: 400, Error: "bad request"},
 			expectOut: fmt.Sprintf(`{"error" : "%s", "status_code" : "%d"}`, "bad request", 400),
 		},
 	}
@@ -193,6 +194,30 @@ func TestValidateUrl(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := UrlValidationCheck(&tc.baseurl)
 			assert.Equal(t, r, tc.expect)
+		})
+	}
+}
+
+func TestValidateInitialURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		url     string
+		wantErr bool
+	}{
+		{name: "public IPv4", url: "https://8.8.8.8", wantErr: false},
+		{name: "loopback IPv4", url: "http://127.0.0.1", wantErr: true},
+		{name: "private IPv4", url: "http://192.168.1.10", wantErr: true},
+		{name: "link local IPv4", url: "http://169.254.169.254", wantErr: true},
+		{name: "loopback IPv6", url: "http://[::1]", wantErr: true},
+		{name: "localhost hostname", url: "http://localhost", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateInitialURL(context.Background(), tt.url)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateInitialURL() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }

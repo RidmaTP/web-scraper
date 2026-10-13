@@ -53,6 +53,12 @@ curl --location 'http://localhost:8000/api/result?url=' \
 
 **Solution**: Implemented real-time data streaming to send processed data to the frontend immediately as it becomes available, rather than waiting for complete processing.
 
+### SSRF protection
+The initial URL supplied to the analyzer is restricted to HTTP and HTTPS destinations that resolve
+to public addresses. Loopback, private, link-local, multicast, unspecified, reserved, and cloud
+metadata destinations are rejected before Chromium navigation. Discovered links are not covered by
+this initial-URL policy.
+
 ## Future Improvements
 
 1. **HTTP/2 Upgrade**: Replace HTTP 1.1 Server-Sent Events (SSE) with HTTP/2 for more efficient data streaming

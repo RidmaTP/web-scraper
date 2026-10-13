@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-//defines all the routes
+// defines all the routes
 func Router(engine *gin.Engine, metrics *observability.Metrics, tracer trace.Tracer) {
 	engine.Use(cors.Default())
 
@@ -20,10 +20,10 @@ func Router(engine *gin.Engine, metrics *observability.Metrics, tracer trace.Tra
 	group.Use(middleware.LogMiddleware)
 	group.Use(middleware.ObservabilityMiddleware(metrics, tracer))
 	group.Use(middleware.RateLimitMiddleware())
-	routes(group)
+	routes(group, tracer)
 }
 
-func routes(rg *gin.RouterGroup) {
+func routes(rg *gin.RouterGroup, tracer trace.Tracer) {
 	rg.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "service up and running",
@@ -31,6 +31,6 @@ func routes(rg *gin.RouterGroup) {
 			"version": configs.GetAppVersion()})
 	})
 
-	rg.GET("/result", handlers.GetResultsHandler)
+	rg.GET("/result", handlers.GetResultsHandler(tracer))
 
 }
