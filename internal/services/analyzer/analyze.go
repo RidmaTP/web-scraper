@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"runtime"
 	"sync"
-	"time"
 
 	"github.com/RidmaTP/web-analyzer/internal/models"
 	"github.com/RidmaTP/web-analyzer/internal/services/fetcher"
@@ -15,10 +14,15 @@ import (
 
 type BodyFetcher interface {
 	FetchBody(ctx context.Context, url string) (io.ReadCloser, error)
+	FetchLink(ctx context.Context, url string) error
 }
 
 func (a *BodyAnalyzer) fetchBody(ctx context.Context, url string) (io.ReadCloser, error) {
 	return a.Fetcher.FetchBody(ctx, url)
+}
+
+func (a *BodyAnalyzer) checkLink(ctx context.Context, url string) error {
+	return a.Fetcher.FetchLink(ctx, url)
 }
 
 type BodyAnalyzer struct {
@@ -35,7 +39,7 @@ type BodyAnalyzer struct {
 
 func NewBodyAnalyzer() *BodyAnalyzer {
 	return &BodyAnalyzer{
-		Fetcher: &fetcher.Fetcher{Client: &http.Client{Timeout: 15 * time.Second}},
+		Fetcher: &fetcher.Fetcher{},
 		Stream:  make(chan string, 20),
 		Output:  models.Output{},
 		Workers: runtime.NumCPU(),
