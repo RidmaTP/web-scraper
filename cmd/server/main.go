@@ -11,9 +11,9 @@ import (
 
 	"github.com/RidmaTP/web-analyzer/internal/api"
 	"github.com/RidmaTP/web-analyzer/internal/api/middleware"
+	"github.com/RidmaTP/web-analyzer/internal/browser"
 	"github.com/RidmaTP/web-analyzer/internal/configs"
 	"github.com/RidmaTP/web-analyzer/internal/observability"
-	"github.com/RidmaTP/web-analyzer/internal/services/fetcher"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,6 +36,10 @@ func main() {
 		log.Fatalf("failed to initialize observability: %v", err)
 	}
 
+	tracer := tracerProvider.Tracer("web-analyzer")
+
+	api.RegisterRoutes(app, metrics, tracer, configs.GetCacheConfig())
+
 	defer func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -47,11 +51,9 @@ func main() {
 			log.Printf("failed to shut down tracer provider: %v", err)
 		}
 	}()
-	if err := fetcher.LaunchBrowser(configs.GetChromePath()); err != nil {
+	if err := browser.LaunchBrowser(configs.GetChromePath()); err != nil {
 		log.Fatal(err)
 	}
-	tracer := tracerProvider.Tracer("web-analyzer")
-	api.Router(app, metrics, tracer)
 
 	server := &http.Server{
 		Addr:    ":" + configs.GetPort(),
@@ -62,6 +64,8 @@ func main() {
 		log.Printf("server listening on %s", server.Addr)
 		server.ListenAndServe()
 	}()
+
+	//graceful shutdown
 
 	shutdownSignal := make(chan os.Signal, 1)
 	signal.Notify(shutdownSignal, os.Interrupt, syscall.SIGTERM)
@@ -76,7 +80,7 @@ func main() {
 		log.Printf("server shutdown failed: %v", err)
 	}
 
-	if err := fetcher.CloseBrowser(); err != nil {
+	if err := browser.CloseBrowser(); err != nil {
 		log.Printf("unable to close rod browser: %v", err)
 	}
 }

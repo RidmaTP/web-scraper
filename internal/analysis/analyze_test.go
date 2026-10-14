@@ -1,4 +1,4 @@
-package analyzer
+package analysis
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/RidmaTP/web-analyzer/internal/browser"
 	"github.com/RidmaTP/web-analyzer/internal/models"
-	"github.com/RidmaTP/web-analyzer/internal/services/fetcher"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/html"
 )
@@ -43,7 +43,7 @@ func Test_Analyze(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ba := BodyAnalyzer{
-				Fetcher: &fetcher.MockFetcher{
+				Fetcher: &browser.MockFetcher{
 					ResponseBody: tt.html,
 				},
 				Stream: make(chan string, 10),
@@ -112,7 +112,7 @@ func Test_Analyze_Err(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ba := BodyAnalyzer{
-				Fetcher: &fetcher.MockFetcher{
+				Fetcher: &browser.MockFetcher{
 					ResponseBody:   tt.html,
 					ForceErr:       tt.forceErrFetcher,
 					ForceReaderErr: tt.forceErrReader,
@@ -465,7 +465,7 @@ func Test_FindLinks(t *testing.T) {
 			ba := &BodyAnalyzer{
 				Output:          models.Output{},
 				Stream:          stream,
-				Fetcher:         &fetcher.MockFetcher{},
+				Fetcher:         &browser.MockFetcher{},
 				muInactiveLinks: sync.Mutex{},
 				muActiveLinks:   sync.Mutex{},
 				wg:              &sync.WaitGroup{},
@@ -618,7 +618,7 @@ func Test_ActiveCheckerWorker(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			analyzer := &BodyAnalyzer{
 				Output:  models.Output{},
-				Fetcher: &fetcher.MockFetcher{ForceErr: tt.isUrlInactive},
+				Fetcher: &browser.MockFetcher{ForceErr: tt.isUrlInactive},
 				Stream:  make(chan string, 1),
 			}
 
