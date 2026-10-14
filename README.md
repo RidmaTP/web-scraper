@@ -37,9 +37,17 @@ docker-compose up
 Use the following curl command to interact with the API:
 
 ```bash
-curl --location 'http://localhost:8000/api/result?url=' \
+curl --location 'http://localhost:8000/api/v1/result?url=' \
 --data ''
 ```
+
+The current API is versioned under `/api/v1`:
+
+- `GET /api/v1/health`
+- `GET /api/v1/result?url=<target-url>` (Server-Sent Events)
+
+The original `/api/health` and `/api/result` paths remain available for
+backward compatibility. New integrations should use `/api/v1`.
 
 ## Challenges Faced and Solutions
 
@@ -52,6 +60,12 @@ curl --location 'http://localhost:8000/api/result?url=' \
 **Challenge**: Scanning very large pages takes significant time, leading to poor user experience.
 
 **Solution**: Implemented real-time data streaming to send processed data to the frontend immediately as it becomes available, rather than waiting for complete processing.
+
+### SSRF protection
+The initial URL supplied to the analyzer is restricted to HTTP and HTTPS destinations that resolve
+to public addresses. Loopback, private, link-local, multicast, unspecified, reserved, and cloud
+metadata destinations are rejected before Chromium navigation. Discovered links are not covered by
+this initial-URL policy.
 
 ## Future Improvements
 

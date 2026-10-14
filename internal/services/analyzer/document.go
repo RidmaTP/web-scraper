@@ -41,14 +41,19 @@ func (a *BodyAnalyzer) FindHTMLVersion(tokenType html.TokenType, token html.Toke
 
 	version := ""
 	if tokenType == html.DoctypeToken {
-		doctype := token.Data
+		doctype := strings.TrimSpace(token.Data)
+		fields := strings.Fields(doctype)
+		if len(fields) == 0 {
+			return nil
+		}
+		doctypeName := strings.ToLower(fields[0])
 		switch {
-		case doctype == "html":
-			version = "HTML5"
-		case utils.ContainsIgnoreCase(doctype, "XHTML"):
-			version = "XHTML"
 		case utils.ContainsIgnoreCase(doctype, "HTML 4.01"):
 			version = "HTML 4.01"
+		case utils.ContainsIgnoreCase(doctype, "XHTML"):
+			version = "XHTML"
+		case doctypeName == "html":
+			version = "HTML5"
 		default:
 			version = doctype
 		}

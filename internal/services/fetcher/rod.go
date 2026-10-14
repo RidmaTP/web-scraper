@@ -16,7 +16,7 @@ var (
 	browser   *rod.Browser
 )
 
-func (f *Fetcher) fetchHTMLBodyRod(ctx context.Context, url string) (*string, error){
+func (f *Fetcher) fetchHTMLBodyRod(ctx context.Context, url string) (*string, error) {
 	timeout := f.BrowserTimeout
 	if timeout <= 0 {
 		timeout = 30 * time.Second
@@ -48,6 +48,18 @@ func (f *Fetcher) fetchHTMLBodyRod(ctx context.Context, url string) (*string, er
 	body, err := page.HTML()
 	if err != nil {
 		return nil, fmt.Errorf("rod body extraction failed: %w", err)
+	}
+	doctype, err := page.Eval(`() => {
+		if (!document.doctype) {
+			return "";
+		}
+		return new XMLSerializer().serializeToString(document.doctype);
+	}`)
+	if err != nil {
+		return nil, fmt.Errorf("rod doctype extraction failed: %w", err)
+	}
+	if doctype.Value.String() != "" {
+		body = doctype.Value.String() + "\n" + body
 	}
 	return &body, nil
 }

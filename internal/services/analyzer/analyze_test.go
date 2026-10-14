@@ -251,6 +251,18 @@ func Test_FindHTMLVersion(t *testing.T) {
 			tokenType:     html.DoctypeToken,
 			token:         html.Token{Data: "html"},
 			expectVersion: "HTML5",
+		},
+		{
+			name:          "uppercase HTML5 doctype",
+			tokenType:     html.DoctypeToken,
+			token:         html.Token{Data: "HTML"},
+			expectVersion: "HTML5",
+		},
+		{
+			name:          "HTML5 doctype with extra declaration data",
+			tokenType:     html.DoctypeToken,
+			token:         html.Token{Data: "html something"},
+			expectVersion: "HTML5",
 			isStream:      true,
 		},
 		{
