@@ -45,19 +45,21 @@ func (f *Fetcher) fetchHTMLBodyRod(ctx context.Context, url string) (*string, er
 	if err := page.WaitLoad(); err != nil {
 		return nil, fmt.Errorf("rod page load failed: %w", err)
 	}
-	// mainElement, err := page.Element("main")
-	// if err != nil {
-	// 	return nil, fmt.Errorf("rod main element lookup failed: %w", err)
-	// }
-	// if mainElement == nil {
-	// 	return nil, fmt.Errorf("rod main element not found")
-	// }
-	// if err := mainElement.WaitVisible(); err != nil {
-	// 	return nil, fmt.Errorf("rod main element visibility wait failed: %w", err)
-	// }
 	body, err := page.HTML()
 	if err != nil {
 		return nil, fmt.Errorf("rod body extraction failed: %w", err)
+	}
+	doctype, err := page.Eval(`() => {
+		if (!document.doctype) {
+			return "";
+		}
+		return new XMLSerializer().serializeToString(document.doctype);
+	}`)
+	if err != nil {
+		return nil, fmt.Errorf("rod doctype extraction failed: %w", err)
+	}
+	if doctype.Value.String() != "" {
+		body = doctype.Value.String() + "\n" + body
 	}
 	return &body, nil
 }

@@ -93,6 +93,13 @@ func UrlValidationCheck(input *string) *models.ErrorOut {
 	return nil
 }
 
+func ValidateRequestURL(ctx context.Context, input *string) *models.ErrorOut {
+	if errObj := UrlValidationCheck(input); errObj != nil {
+		return errObj
+	}
+	return ValidateInitialURL(ctx, *input)
+}
+
 // ValidateInitialURL applies the SSRF policy to the URL that will be opened by Rod.
 func ValidateInitialURL(ctx context.Context, input string) *models.ErrorOut {
 	parsed, err := url.Parse(input)

@@ -137,5 +137,14 @@ func (a *BodyAnalyzer) Analyze(ctx context.Context, url string) *models.ErrorOut
 			return &models.ErrorOut{StatusCode: http.StatusInternalServerError, Error: err.Error()}
 		}
 	}
+
+	a.muOutput.Lock()
+	defer a.muOutput.Unlock()
+	if a.Output.Headers == nil {
+		a.Output.Headers = make(map[string]int)
+	}
+	if err := a.emitLocked(); err != nil {
+		return &models.ErrorOut{StatusCode: http.StatusInternalServerError, Error: err.Error()}
+	}
 	return nil
 }

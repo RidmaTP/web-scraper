@@ -20,26 +20,23 @@ func GetResultsHandler(tracer trace.Tracer) gin.HandlerFunc {
 
 		url := c.Query("url")
 
+		ctx := c.Request.Context()
+
+		errObj := utils.ValidateRequestURL(ctx, &url)
+		if errObj != nil {
+			c.AbortWithStatusJSON(errObj.StatusCode, gin.H{
+				"error":       errObj.Error,
+				"status_code": errObj.StatusCode,
+			})
+			return
+		}
+
 		c.Writer.Header().Set("Content-Type", "text/event-stream")
 		c.Writer.Header().Set("Cache-Control", "no-cache")
 		c.Writer.Header().Set("Connection", "keep-alive")
 		c.Writer.Flush()
 
-		ctx := c.Request.Context()
 		a := analyzer.NewBodyAnalyzer(tracer)
-
-		errObj := utils.UrlValidationCheck(&url)
-		if errObj != nil {
-			fmt.Fprintf(c.Writer, "data: %s\n\n", *utils.ErrStreamObj(*errObj))
-			c.Writer.Flush()
-			return
-		}
-		errObj = utils.ValidateInitialURL(ctx, url)
-		if errObj != nil {
-			fmt.Fprintf(c.Writer, "data: %s\n\n", *utils.ErrStreamObj(*errObj))
-			c.Writer.Flush()
-			return
-		}
 		fmt.Println(url)
 
 		//checking cache for results for the given url

@@ -37,9 +37,17 @@ docker-compose up
 Use the following curl command to interact with the API:
 
 ```bash
-curl --location 'http://localhost:8000/api/result?url=' \
+curl --location 'http://localhost:8000/api/v1/result?url=' \
 --data ''
 ```
+
+The current API is versioned under `/api/v1`:
+
+- `GET /api/v1/health`
+- `GET /api/v1/result?url=<target-url>` (Server-Sent Events)
+
+The original `/api/health` and `/api/result` paths remain available for
+backward compatibility. New integrations should use `/api/v1`.
 
 ## Challenges Faced and Solutions
 

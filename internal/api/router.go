@@ -16,11 +16,15 @@ import (
 func Router(engine *gin.Engine, metrics *observability.Metrics, tracer trace.Tracer) {
 	engine.Use(cors.Default())
 
-	group := engine.Group("/api/")
-	group.Use(middleware.LogMiddleware)
-	group.Use(middleware.ObservabilityMiddleware(metrics, tracer))
-	group.Use(middleware.RateLimitMiddleware())
-	routes(group, tracer)
+	api := engine.Group("/api")
+	api.Use(middleware.LogMiddleware)
+	api.Use(middleware.ObservabilityMiddleware(metrics, tracer))
+	api.Use(middleware.RateLimitMiddleware())
+
+	// Keep the unversioned routes for existing clients. New clients should use
+	// the versioned API group below.
+	routes(api, tracer)
+	routes(api.Group("/v1"), tracer)
 }
 
 func routes(rg *gin.RouterGroup, tracer trace.Tracer) {
