@@ -1,4 +1,4 @@
-package fetcher
+package browser
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package analyzer
+package analysis
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/RidmaTP/web-analyzer/internal/browser"
 	"github.com/RidmaTP/web-analyzer/internal/models"
-	"github.com/RidmaTP/web-analyzer/internal/services/fetcher"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -55,7 +55,7 @@ func NewBodyAnalyzer(tracers ...trace.Tracer) *BodyAnalyzer {
 		tracer = tracers[0]
 	}
 	return &BodyAnalyzer{
-		Fetcher: &fetcher.Fetcher{},
+		Fetcher: &browser.Fetcher{},
 		Stream:  make(chan string, 20),
 		Output:  models.Output{},
 		Workers: runtime.NumCPU(),
