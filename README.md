@@ -62,7 +62,13 @@ For direct execution:
 
 ### Docker Compose
 
-From the repository root:
+To run the frontend clone https://github.com/RidmaTP/web-scraper-ui:
+
+```bash
+docker compose up --build
+```
+
+To run the backend services, from this repository root:
 
 ```bash
 docker compose up --build
