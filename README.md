@@ -4,8 +4,7 @@ Web Analyzer is a Go backend that renders and analyzes public web pages with
 Chromium. It extracts page metadata, classifies links, checks link status, and
 streams results through Server-Sent Events (SSE).
 
-This repository contains the backend and observability infrastructure. A
-frontend is not included; browser clients can consume the SSE API directly.
+This repository contains the backend, frontend and observability infrastructure.
 
 ## Technology
 
@@ -17,6 +16,16 @@ frontend is not included; browser clients can consume the SSE API directly.
 - In-memory result cache: <https://github.com/patrickmn/go-cache>
 - Structured JSON logging with Go `log/slog`
 - IP rate limiting with `golang.org/x/time/rate`
+
+### Frontend
+
+- React 19.1.0
+- Realtime analysis using SSE
+- Simple UI
+- URL https://github.com/RidmaTP/web-scraper-ui
+
+<img width="1647" height="871" alt="image" src="https://github.com/user-attachments/assets/f1c771cf-0824-4d0a-ac91-3b268180d3e7" />
+
 
 ### DevOps and observability
 
@@ -91,9 +100,10 @@ go run ./cmd/server
 Set `CHROME_PATH` to the local Chromium executable first. Direct execution
 starts only the backend, not the Docker observability services.
 
-## Service URLs
+## URLs
 
 - API: <http://localhost:8000>
+- Frontend: <http://localhost:3800/>
 - Grafana: <http://localhost:3000>
 
 Prometheus and OTLP ports are assigned dynamically by the current Compose
