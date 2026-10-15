@@ -1,7 +1,7 @@
 
 {
   "uid": "go-app-overview",
-  "title": "Go Application Overview",
+  "title": "Web scraper Overview",
   "tags": ["go", "observability"],
   "timezone": "browser",
   "schemaVersion": 39,
