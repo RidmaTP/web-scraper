@@ -1,11 +1,26 @@
 # Web Analyzer
 
-Web Analyzer is a Go backend that renders and analyzes public web pages with
+Web Analyzer is a service that renders and analyzes public web pages in realtime with
 Chromium. It extracts page metadata, classifies links, checks link status, and
 streams results through Server-Sent Events (SSE).
 
-This repository contains the backend and observability infrastructure. A
-frontend is not included; browser clients can consume the SSE API directly.
+This repository contains the backend, frontend and observability infrastructure.
+
+## Application behavior
+
+- **Validation:** only HTTP/HTTPS URLs with valid hosts are accepted.
+- **SSRF protection:** loopback, private, link-local, multicast, reserved,
+  documentation, and cloud-metadata destinations are blocked before browsing.
+- **Realtime Streaming:** results are sent incrementally over SSE.
+- **Caching:** completed results are cached in memory for two hours to reduce latency.
+- **Rate limiting:** each client IP receives a token bucket with rate 10 and
+  burst 20.
+- **Logging:** `X-Request-ID` is stored in context and included in structured
+  request logs for easier log tracing.
+- **Tracing:** OpenTelemetry exports traces through the Collector to Tempo.
+- **Metrics:** OpenTelemetry exports metrics for Prometheus scraping.
+- **Centralized logs:** Promtail forwards Docker logs to Loki for Grafana
+  Explore.
 
 ## Technology
 
@@ -18,6 +33,16 @@ frontend is not included; browser clients can consume the SSE API directly.
 - Structured JSON logging with Go `log/slog`
 - IP rate limiting with `golang.org/x/time/rate`
 
+### Frontend
+
+- React 19.1.0
+- Realtime analysis using SSE
+- Simple UI
+- URL https://github.com/RidmaTP/web-scraper-ui
+
+<img width="1647" height="871" alt="image" src="https://github.com/user-attachments/assets/f1c771cf-0824-4d0a-ac91-3b268180d3e7" />
+
+
 ### DevOps and observability
 
 - Docker Compose
@@ -27,7 +52,12 @@ frontend is not included; browser clients can consume the SSE API directly.
 - Loki and Promtail centralized logs
 - Grafana dashboards and Explore
 
-There is no frontend or Swagger/OpenAPI endpoint in this repository.
+<img width="1573" height="867" alt="image" src="https://github.com/user-attachments/assets/b2267ac4-a586-410e-934b-5c21a39dc691" />
+
+<img width="1572" height="942" alt="image" src="https://github.com/user-attachments/assets/6e70d4bd-58f3-4aa7-b866-3a517c6d4465" />
+
+<img width="1562" height="847" alt="image" src="https://github.com/user-attachments/assets/a4b388c9-6635-4d02-bfcc-2e17faef5b1b" />
+
 
 ## Prerequisites
 
@@ -44,27 +74,27 @@ For direct execution:
 - Chromium or Google Chrome
 - Network access for public pages and Go modules
 
-## Configuration
-
-The application reads `internal/configs/.env`:
-
-| Variable | Purpose | Docker value |
-|---|---|---|
-| `APP_VERSION` | Health response version | `v1.1` |
-| `PORT` | HTTP port | `8000` |
-| `CHROME_PATH` | Chromium executable | `/usr/bin/chromium` |
-
 ## Run the project
 
-### Docker Compose
+### Run Frontend
 
-From the repository root:
+To run the frontend, clone https://github.com/RidmaTP/web-scraper-ui
+Then execute:
 
 ```bash
 docker compose up --build
 ```
 
-To start the application and its telemetry dependencies:
+### Run Backend
+
+To run the backend with the observability services, from this repository root:
+
+```bash
+docker compose up --build
+```
+
+IMPORTANT - If the BE didn't start mostly could be because of having 7 containers starting in the docker compose service. In that case,
+To start the application:
 
 ```bash
 docker compose up --build web-scraper-app
@@ -78,13 +108,8 @@ Stop the stack:
 docker compose down
 ```
 
-Remove persisted Loki data and Promtail positions:
 
-```bash
-docker compose down -v
-```
-
-If Tempo or Loki exits with status 137, increase Docker Desktop memory.
+NOTE - If Tempo or Loki exits with status 137, increase Docker Desktop memory.
 
 ### Run directly with Go
 
@@ -96,12 +121,15 @@ go run ./cmd/server
 Set `CHROME_PATH` to the local Chromium executable first. Direct execution
 starts only the backend, not the Docker observability services.
 
-## Service URLs
+## URLs
 
 - API: <http://localhost:8000>
+- Frontend: <http://localhost:3800/>
 - Grafana: <http://localhost:3000>
-- Tempo: <http://localhost:3200>
-- Loki: <http://localhost:3100>
+
+For grafana dashbored, login credentials are the default credentials.
+  - username : admin
+  - password : admin
 
 Prometheus and OTLP ports are assigned dynamically by the current Compose
 configuration. Use `docker compose port prometheus 9090` to find the host port.
@@ -159,24 +187,6 @@ Invalid URLs return JSON with HTTP 400, for example:
 }
 ```
 
-## Application behavior
-
-- **Validation:** only HTTP/HTTPS URLs with valid hosts are accepted.
-- **SSRF protection:** loopback, private, link-local, multicast, reserved,
-  documentation, and cloud-metadata destinations are blocked before browsing.
-- **Streaming:** results are sent incrementally over SSE.
-- **Caching:** completed results are cached in memory for two hours.
-- **Rate limiting:** each client IP receives a token bucket with rate 10 and
-  burst 20.
-- **Logging:** `X-Request-ID` is stored in context and included in structured
-  request logs.
-- **CORS:** `X-Request-ID` is allowed and exposed.
-- **Tracing:** OpenTelemetry exports traces through the Collector to Tempo.
-- **Metrics:** OpenTelemetry exports metrics for Prometheus scraping.
-- **Centralized logs:** Promtail forwards Docker logs to Loki for Grafana
-  Explore.
-- **Authentication:** authentication and authorization are not currently
-  implemented. Use an authenticated gateway for public deployments.
 
 ## Testing
 
@@ -204,12 +214,9 @@ go test ./internal/analysis ./internal/application ./internal/browser ./internal
 
 ## Possible improvements
 
-1. Add an OpenAPI specification and Swagger UI.
-2. Add a dedicated frontend for submitting URLs and displaying SSE results.
-3. Generate a request ID when the client does not provide one and return it in
-   the response.
-4. Add authentication and environment-specific CORS origins.
-5. Use a shared cache for horizontally scaled deployments.
-6. Apply SSRF checks to discovered links and re-check DNS before navigation.
-7. Add readiness/liveness endpoints and more integration tests.
-8. Pin all infrastructure image versions and configure log/trace retention.
+1. Add authentication.
+2. Remove default credentials for grafana dashbored.
+3. Use a shared cache for horizontally scaled deployments.
+4. Apply more SSRF checks for initial URL validation and add SSRF checks to the discovered links.
+5. Add readiness/liveness endpoints.
+6. Improving grafana dashbored.
