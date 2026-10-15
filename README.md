@@ -40,7 +40,7 @@ This repository contains the backend, frontend and observability infrastructure.
 - Simple UI
 - URL https://github.com/RidmaTP/web-scraper-ui
 
-<img width="1647" height="871" alt="image" src="https://github.com/user-attachments/assets/f1c771cf-0824-4d0a-ac91-3b268180d3e7" />
+<img width="1467" height="877" alt="image" src="https://github.com/user-attachments/assets/2f583923-b33d-4297-8ffa-0d58bb8207d4" />
 
 
 ### DevOps and observability
