@@ -1,4 +1,4 @@
-# Web Analyzer
+# Web Scraper
 
 Web Analyzer is a service that renders and analyzes public web pages in realtime with
 Chromium. It extracts page metadata, classifies links, checks link status, and
@@ -40,7 +40,7 @@ This repository contains the backend, frontend and observability infrastructure.
 - Simple UI
 - URL https://github.com/RidmaTP/web-scraper-ui
 
-<img width="1647" height="871" alt="image" src="https://github.com/user-attachments/assets/f1c771cf-0824-4d0a-ac91-3b268180d3e7" />
+<img width="1467" height="877" alt="image" src="https://github.com/user-attachments/assets/2f583923-b33d-4297-8ffa-0d58bb8207d4" />
 
 
 ### DevOps and observability
@@ -51,6 +51,8 @@ This repository contains the backend, frontend and observability infrastructure.
 - Tempo traces
 - Loki and Promtail centralized logs
 - Grafana dashboards and Explore
+
+<img width="572" height="522" alt="observability" src="https://github.com/user-attachments/assets/e7575d5d-eaf9-4c77-b186-0e935afa9acc" />
 
 <img width="1573" height="867" alt="image" src="https://github.com/user-attachments/assets/b2267ac4-a586-410e-934b-5c21a39dc691" />
 
@@ -82,7 +84,7 @@ To run the frontend, clone https://github.com/RidmaTP/web-scraper-ui
 Then execute:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 ### Run Backend
@@ -90,14 +92,14 @@ docker compose up --build
 To run the backend with the observability services, from this repository root:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 IMPORTANT - If the BE didn't start mostly could be because of having 7 containers starting in the docker compose service. In that case,
 To start the application:
 
 ```bash
-docker compose up --build web-scraper-app
+docker compose up --build web-scraper-app -d
 ```
 
 The Compose service is `web-scraper-app`; its container is `web-scraper`.
