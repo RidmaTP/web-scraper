@@ -6,6 +6,22 @@ streams results through Server-Sent Events (SSE).
 
 This repository contains the backend, frontend and observability infrastructure.
 
+## Application behavior
+
+- **Validation:** only HTTP/HTTPS URLs with valid hosts are accepted.
+- **SSRF protection:** loopback, private, link-local, multicast, reserved,
+  documentation, and cloud-metadata destinations are blocked before browsing.
+- **Realtime Streaming:** results are sent incrementally over SSE.
+- **Caching:** completed results are cached in memory for two hours to reduce latency.
+- **Rate limiting:** each client IP receives a token bucket with rate 10 and
+  burst 20.
+- **Logging:** `X-Request-ID` is stored in context and included in structured
+  request logs for easier log tracing.
+- **Tracing:** OpenTelemetry exports traces through the Collector to Tempo.
+- **Metrics:** OpenTelemetry exports metrics for Prometheus scraping.
+- **Centralized logs:** Promtail forwards Docker logs to Loki for Grafana
+  Explore.
+
 ## Technology
 
 ### Backend
@@ -111,6 +127,10 @@ starts only the backend, not the Docker observability services.
 - Frontend: <http://localhost:3800/>
 - Grafana: <http://localhost:3000>
 
+For grafana dashbored, login credentials are the default credentials.
+  - username : admin
+  - password : admin
+
 Prometheus and OTLP ports are assigned dynamically by the current Compose
 configuration. Use `docker compose port prometheus 9090` to find the host port.
 Grafana provisions Prometheus, Tempo, and Loki automatically.
@@ -167,21 +187,6 @@ Invalid URLs return JSON with HTTP 400, for example:
 }
 ```
 
-## Application behavior
-
-- **Validation:** only HTTP/HTTPS URLs with valid hosts are accepted.
-- **SSRF protection:** loopback, private, link-local, multicast, reserved,
-  documentation, and cloud-metadata destinations are blocked before browsing.
-- **Realtime Streaming:** results are sent incrementally over SSE.
-- **Caching:** completed results are cached in memory for two hours to reduce latency.
-- **Rate limiting:** each client IP receives a token bucket with rate 10 and
-  burst 20.
-- **Logging:** `X-Request-ID` is stored in context and included in structured
-  request logs for easier log tracing.
-- **Tracing:** OpenTelemetry exports traces through the Collector to Tempo.
-- **Metrics:** OpenTelemetry exports metrics for Prometheus scraping.
-- **Centralized logs:** Promtail forwards Docker logs to Loki for Grafana
-  Explore.
 
 ## Testing
 
@@ -210,7 +215,8 @@ go test ./internal/analysis ./internal/application ./internal/browser ./internal
 ## Possible improvements
 
 1. Add authentication.
-2. Use a shared cache for horizontally scaled deployments.
-3. Apply more SSRF checks for initial URL validation and add SSRF checks to the discovered links.
-4. Add readiness/liveness endpoints.
-5. Improving grafana dashbored.
+2. Remove default credentials for grafana dashbored.
+3. Use a shared cache for horizontally scaled deployments.
+4. Apply more SSRF checks for initial URL validation and add SSRF checks to the discovered links.
+5. Add readiness/liveness endpoints.
+6. Improving grafana dashbored.
