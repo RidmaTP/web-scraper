@@ -52,6 +52,8 @@ This repository contains the backend, frontend and observability infrastructure.
 - Loki and Promtail centralized logs
 - Grafana dashboards and Explore
 
+<img width="491" height="442" alt="observability" src="https://github.com/user-attachments/assets/12e939f5-61e9-4a17-8be1-8fc50de3470d" />
+
 <img width="1573" height="867" alt="image" src="https://github.com/user-attachments/assets/b2267ac4-a586-410e-934b-5c21a39dc691" />
 
 <img width="1572" height="942" alt="image" src="https://github.com/user-attachments/assets/6e70d4bd-58f3-4aa7-b866-3a517c6d4465" />
