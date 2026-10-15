@@ -27,7 +27,12 @@ frontend is not included; browser clients can consume the SSE API directly.
 - Loki and Promtail centralized logs
 - Grafana dashboards and Explore
 
-There is no frontend or Swagger/OpenAPI endpoint in this repository.
+<img width="1573" height="867" alt="image" src="https://github.com/user-attachments/assets/b2267ac4-a586-410e-934b-5c21a39dc691" />
+
+<img width="1572" height="942" alt="image" src="https://github.com/user-attachments/assets/6e70d4bd-58f3-4aa7-b866-3a517c6d4465" />
+
+<img width="1562" height="847" alt="image" src="https://github.com/user-attachments/assets/a4b388c9-6635-4d02-bfcc-2e17faef5b1b" />
+
 
 ## Prerequisites
 
@@ -43,16 +48,6 @@ For direct execution:
 - Go 1.26
 - Chromium or Google Chrome
 - Network access for public pages and Go modules
-
-## Configuration
-
-The application reads `internal/configs/.env`:
-
-| Variable | Purpose | Docker value |
-|---|---|---|
-| `APP_VERSION` | Health response version | `v1.1` |
-| `PORT` | HTTP port | `8000` |
-| `CHROME_PATH` | Chromium executable | `/usr/bin/chromium` |
 
 ## Run the project
 
@@ -100,8 +95,6 @@ starts only the backend, not the Docker observability services.
 
 - API: <http://localhost:8000>
 - Grafana: <http://localhost:3000>
-- Tempo: <http://localhost:3200>
-- Loki: <http://localhost:3100>
 
 Prometheus and OTLP ports are assigned dynamically by the current Compose
 configuration. Use `docker compose port prometheus 9090` to find the host port.
@@ -204,12 +197,8 @@ go test ./internal/analysis ./internal/application ./internal/browser ./internal
 
 ## Possible improvements
 
-1. Add an OpenAPI specification and Swagger UI.
-2. Add a dedicated frontend for submitting URLs and displaying SSE results.
-3. Generate a request ID when the client does not provide one and return it in
-   the response.
-4. Add authentication and environment-specific CORS origins.
-5. Use a shared cache for horizontally scaled deployments.
-6. Apply SSRF checks to discovered links and re-check DNS before navigation.
-7. Add readiness/liveness endpoints and more integration tests.
-8. Pin all infrastructure image versions and configure log/trace retention.
+1. Add authentication.
+2. Use a shared cache for horizontally scaled deployments.
+3. Apply more SSRF checks for initial URL validation and add SSRF checks to the discovered links.
+4. Add readiness/liveness endpoints.
+5. Improving grafana dashbored.
