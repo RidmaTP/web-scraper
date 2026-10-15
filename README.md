@@ -82,7 +82,7 @@ To run the frontend, clone https://github.com/RidmaTP/web-scraper-ui
 Then execute:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 ### Run Backend
@@ -90,14 +90,14 @@ docker compose up --build
 To run the backend with the observability services, from this repository root:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 IMPORTANT - If the BE didn't start mostly could be because of having 7 containers starting in the docker compose service. In that case,
 To start the application:
 
 ```bash
-docker compose up --build web-scraper-app
+docker compose up --build web-scraper-app -d
 ```
 
 The Compose service is `web-scraper-app`; its container is `web-scraper`.
