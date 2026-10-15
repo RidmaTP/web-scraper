@@ -60,15 +60,18 @@ For direct execution:
 
 ## Run the project
 
-### Docker Compose
+### Run Frontend
 
-To run the frontend clone https://github.com/RidmaTP/web-scraper-ui:
+To run the frontend, clone https://github.com/RidmaTP/web-scraper-ui
+Then execute:
 
 ```bash
 docker compose up --build
 ```
 
-To run the backend services, from this repository root:
+### Run Backend
+
+To run the backend with the observability services, from this repository root:
 
 ```bash
 docker compose up --build
@@ -88,7 +91,6 @@ Stop the stack:
 ```bash
 docker compose down
 ```
-
 
 
 NOTE - If Tempo or Loki exits with status 137, increase Docker Desktop memory.
