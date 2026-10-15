@@ -172,19 +172,16 @@ Invalid URLs return JSON with HTTP 400, for example:
 - **Validation:** only HTTP/HTTPS URLs with valid hosts are accepted.
 - **SSRF protection:** loopback, private, link-local, multicast, reserved,
   documentation, and cloud-metadata destinations are blocked before browsing.
-- **Streaming:** results are sent incrementally over SSE.
-- **Caching:** completed results are cached in memory for two hours.
+- **Realtime Streaming:** results are sent incrementally over SSE.
+- **Caching:** completed results are cached in memory for two hours to reduce latency.
 - **Rate limiting:** each client IP receives a token bucket with rate 10 and
   burst 20.
 - **Logging:** `X-Request-ID` is stored in context and included in structured
-  request logs.
-- **CORS:** `X-Request-ID` is allowed and exposed.
+  request logs for easier log tracing.
 - **Tracing:** OpenTelemetry exports traces through the Collector to Tempo.
 - **Metrics:** OpenTelemetry exports metrics for Prometheus scraping.
 - **Centralized logs:** Promtail forwards Docker logs to Loki for Grafana
   Explore.
-- **Authentication:** authentication and authorization are not currently
-  implemented. Use an authenticated gateway for public deployments.
 
 ## Testing
 
