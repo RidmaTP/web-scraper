@@ -68,7 +68,8 @@ From the repository root:
 docker compose up --build
 ```
 
-To start the application and its telemetry dependencies:
+IMPORTANT - If the BE didn't start mostly could be because of having 7 containers starting in the docker compose service. In that case,
+To start the application:
 
 ```bash
 docker compose up --build web-scraper-app
@@ -82,13 +83,9 @@ Stop the stack:
 docker compose down
 ```
 
-Remove persisted Loki data and Promtail positions:
 
-```bash
-docker compose down -v
-```
 
-If Tempo or Loki exits with status 137, increase Docker Desktop memory.
+NOTE - If Tempo or Loki exits with status 137, increase Docker Desktop memory.
 
 ### Run directly with Go
 
