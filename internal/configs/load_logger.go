@@ -1,33 +1,59 @@
 package configs
 
 import (
+	"context"
+	"log/slog"
 	"os"
 	"sync"
-
-	"github.com/sirupsen/logrus"
 )
 
-// logrus loader into stdout
 var (
 	loadLoggerOnce sync.Once
-	logger         *logrus.Logger
+	logger         *slog.Logger
 )
 
-func LoadLogger() *logrus.Logger {
-	loadLoggerOnce.Do(func() {
-		logger = logrus.New()
-		logger.SetOutput(os.Stdout)
-		logger.SetFormatter(&logrus.TextFormatter{
-			FullTimestamp: true,
-		})
+type requestIDContextKey struct{}
 
+func WithRequestID(ctx context.Context, requestID string) context.Context {
+	return context.WithValue(ctx, requestIDContextKey{}, requestID)
+}
+
+func requestIDFromContext(ctx context.Context) (string, bool) {
+	requestID, ok := ctx.Value(requestIDContextKey{}).(string)
+	return requestID, ok && requestID != ""
+}
+
+type requestIDHandler struct {
+	slog.Handler
+}
+
+func (h requestIDHandler) Handle(ctx context.Context, record slog.Record) error {
+	if requestID, ok := requestIDFromContext(ctx); ok {
+		record.AddAttrs(slog.String("request_id", requestID))
+	}
+	return h.Handler.Handle(ctx, record)
+}
+
+func (h requestIDHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return requestIDHandler{Handler: h.Handler.WithAttrs(attrs)}
+}
+
+func (h requestIDHandler) WithGroup(name string) slog.Handler {
+	return requestIDHandler{Handler: h.Handler.WithGroup(name)}
+}
+
+func LoadLogger() *slog.Logger {
+	loadLoggerOnce.Do(func() {
+		logger = slog.New(requestIDHandler{
+			Handler: slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+				AddSource: false,
+			}),
+		})
+		slog.SetDefault(logger)
 	})
 	return logger
 }
 
-func GetLogger() *logrus.Logger {
-	if logger == nil {
-		LoadLogger()
-	}
-	return logger
+func GetLogger() *slog.Logger {
+	return LoadLogger()
 }

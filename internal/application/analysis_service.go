@@ -13,10 +13,6 @@ import (
 
 const resultCacheDuration = 2 * time.Hour
 
-type AnalysisSession struct {
-	EventStream <-chan string
-	Errors      <-chan *models.ErrorOut
-}
 
 type AnalysisConfig struct {
 	Cache  *cache.Cache
@@ -30,6 +26,12 @@ func NewAnalysisService(cacheStore *cache.Cache, tracer trace.Tracer) *AnalysisC
 func (s *AnalysisConfig) ValidateURL(ctx context.Context, targetURL *string) *models.ErrorOut {
 	return utils.ValidateRequestURL(ctx, targetURL)
 }
+
+type AnalysisSession struct {
+	EventStream <-chan string
+	Errors      <-chan *models.ErrorOut
+}
+
 
 func (s *AnalysisConfig) Start(ctx context.Context, targetURL string) (*AnalysisSession, bool) {
 	if cached, found := s.Cache.Get(targetURL); found {

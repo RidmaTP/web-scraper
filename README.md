@@ -1,84 +1,215 @@
 # Web Analyzer
 
-A web crawler application designed to scrape and analyze web page data, including HTML version, title, internal links, external links, and link status verification (active/inactive).
+Web Analyzer is a Go backend that renders and analyzes public web pages with
+Chromium. It extracts page metadata, classifies links, checks link status, and
+streams results through Server-Sent Events (SSE).
 
-## Features
+This repository contains the backend and observability infrastructure. A
+frontend is not included; browser clients can consume the SSE API directly.
 
-- **Page Analysis**: Extracts HTML version, page title, and categorizes links
-- **Link Validation**: Checks internal and external links for availability
-- **Performance Optimization**: Uses job queues with worker pools for efficient link checking
-- **Real-time Streaming**: Streams data to frontend as it gets processed with http/1.1 server sent events
-- **High Performance**: Optimized for handling large pages efficiently
+## Technology
 
-## Running Instructions
+### Backend
 
-### Backend Server (Port : 8000)
+- Go 1.26
+- Gin: <https://github.com/gin-gonic/gin>
+- Rod and Chromium: <https://github.com/go-rod/rod>
+- In-memory result cache: <https://github.com/patrickmn/go-cache>
+- Structured JSON logging with Go `log/slog`
+- IP rate limiting with `golang.org/x/time/rate`
 
-#### Using Docker Compose
+### DevOps and observability
+
+- Docker Compose
+- OpenTelemetry Collector
+- Prometheus metrics
+- Tempo traces
+- Loki and Promtail centralized logs
+- Grafana dashboards and Explore
+
+There is no frontend or Swagger/OpenAPI endpoint in this repository.
+
+## Prerequisites
+
+For Docker Compose:
+
+- Docker Engine or Docker Desktop with Compose v2
+- At least 4 GB allocated to Docker Desktop is recommended
+- Docker Desktop must allow the project directory, Docker socket, and container
+  log directory to be shared with Linux containers
+
+For direct execution:
+
+- Go 1.26
+- Chromium or Google Chrome
+- Network access for public pages and Go modules
+
+## Configuration
+
+The application reads `internal/configs/.env`:
+
+| Variable | Purpose | Docker value |
+|---|---|---|
+| `APP_VERSION` | Health response version | `v1.1` |
+| `PORT` | HTTP port | `8000` |
+| `CHROME_PATH` | Chromium executable | `/usr/bin/chromium` |
+
+## Run the project
+
+### Docker Compose
+
+From the repository root:
+
 ```bash
-docker-compose up
+docker compose up --build
 ```
 
-#### Using Go directly
-```bash
-cd cmd/server
-go run main.go
-```
-
-
-#### Using Docker Compose
-```bash
-docker-compose up
-```
-
-
-## API Usage
-
-Use the following curl command to interact with the API:
+To start the application and its telemetry dependencies:
 
 ```bash
-curl --location 'http://localhost:8000/api/v1/result?url=' \
---data ''
+docker compose up --build web-scraper-app
 ```
 
-The current API is versioned under `/api/v1`:
+The Compose service is `web-scraper-app`; its container is `web-scraper`.
 
-- `GET /api/v1/health`
-- `GET /api/v1/result?url=<target-url>` (Server-Sent Events)
+Stop the stack:
 
-The original `/api/health` and `/api/result` paths remain available for
-backward compatibility. New integrations should use `/api/v1`.
+```bash
+docker compose down
+```
 
-## Challenges Faced and Solutions
+Remove persisted Loki data and Promtail positions:
 
-### 1. Resource-Intensive Link Checking
-**Challenge**: Checking each link for availability is highly resource-intensive and time-consuming.
+```bash
+docker compose down -v
+```
 
-**Solution**: Implemented a job queue with a worker pool to increase performance and handle concurrent link validation efficiently.
+If Tempo or Loki exits with status 137, increase Docker Desktop memory.
 
-### 2. Large Page Processing Time
-**Challenge**: Scanning very large pages takes significant time, leading to poor user experience.
+### Run directly with Go
 
-**Solution**: Implemented real-time data streaming to send processed data to the frontend immediately as it becomes available, rather than waiting for complete processing.
+```bash
+go mod download
+go run ./cmd/server
+```
 
-### SSRF protection
-The initial URL supplied to the analyzer is restricted to HTTP and HTTPS destinations that resolve
-to public addresses. Loopback, private, link-local, multicast, unspecified, reserved, and cloud
-metadata destinations are rejected before Chromium navigation. Discovered links are not covered by
-this initial-URL policy.
+Set `CHROME_PATH` to the local Chromium executable first. Direct execution
+starts only the backend, not the Docker observability services.
 
-## Future Improvements
+## Service URLs
 
-1. **HTTP/2 Upgrade**: Replace HTTP 1.1 Server-Sent Events (SSE) with HTTP/2 for more efficient data streaming
+- API: <http://localhost:8000>
+- Grafana: <http://localhost:3000>
+- Tempo: <http://localhost:3200>
+- Loki: <http://localhost:3100>
 
-2. **Monitoring Integration**: Add Prometheus integration for comprehensive metrics monitoring and observability
+Prometheus and OTLP ports are assigned dynamically by the current Compose
+configuration. Use `docker compose port prometheus 9090` to find the host port.
+Grafana provisions Prometheus, Tempo, and Loki automatically.
 
-3. **Incremental Updates**: Implement change tracking to send only data changes to the frontend instead of transmitting the entire data object each time
+## API
 
-4. **Enhanced Error Handling**: Improve error handling mechanisms across the application
+### Health
 
-5. **CORS Configuration**: Configure CORS to accept requests only from allowed origins for better security
+```http
+GET /api/v1/health
+```
 
-6. **Test Coverage**: Add more unit tests to cover all scenarios and edge cases
+Example response:
 
-7. **UI Enhancement**: Improve the user interface for better user experience and functionality
+```json
+{
+  "message": "service up and running",
+  "status": "success",
+  "version": "v1.1"
+}
+```
+
+### Analyze a page
+
+```http
+GET /api/v1/result?url=<public-http-or-https-url>
+Accept: text/event-stream
+X-Request-ID: <client-request-id>
+```
+
+Example:
+
+```bash
+curl --no-buffer \
+  -H "Accept: text/event-stream" \
+  -H "X-Request-ID: demo-request-001" \
+  "http://localhost:8000/api/v1/result?url=https%3A%2F%2Fexample.com"
+```
+
+The endpoint streams `data:` events containing analysis results such as:
+
+- HTML version and page title
+- Header count
+- Internal and external links
+- Active and inactive link counts
+- Login-page indicators
+
+Invalid URLs return JSON with HTTP 400, for example:
+
+```json
+{
+  "error": "url destination is not allowed",
+  "status_code": 400
+}
+```
+
+## Application behavior
+
+- **Validation:** only HTTP/HTTPS URLs with valid hosts are accepted.
+- **SSRF protection:** loopback, private, link-local, multicast, reserved,
+  documentation, and cloud-metadata destinations are blocked before browsing.
+- **Streaming:** results are sent incrementally over SSE.
+- **Caching:** completed results are cached in memory for two hours.
+- **Rate limiting:** each client IP receives a token bucket with rate 10 and
+  burst 20.
+- **Logging:** `X-Request-ID` is stored in context and included in structured
+  request logs.
+- **CORS:** `X-Request-ID` is allowed and exposed.
+- **Tracing:** OpenTelemetry exports traces through the Collector to Tempo.
+- **Metrics:** OpenTelemetry exports metrics for Prometheus scraping.
+- **Centralized logs:** Promtail forwards Docker logs to Loki for Grafana
+  Explore.
+- **Authentication:** authentication and authorization are not currently
+  implemented. Use an authenticated gateway for public deployments.
+
+## Testing
+
+Run all tests:
+
+```bash
+go test ./...
+```
+
+Run coverage for the main tested packages:
+
+```bash
+go test ./internal/analysis ./internal/application ./internal/browser ./internal/configs ./internal/utils -cover
+```
+
+## Challenges and solutions
+
+- **Large pages:** SSE prevents users from waiting for the complete crawl.
+- **Many links:** worker-based processing handles link checks efficiently.
+- **JavaScript pages:** Rod and Chromium render pages before extraction.
+- **SSRF risk:** the initial destination is resolved and checked against
+  blocked address ranges.
+- **Troubleshooting:** request IDs, structured logs, traces, metrics, Loki,
+  Tempo, Prometheus, and Grafana provide cross-service observability.
+
+## Possible improvements
+
+1. Add an OpenAPI specification and Swagger UI.
+2. Add a dedicated frontend for submitting URLs and displaying SSE results.
+3. Generate a request ID when the client does not provide one and return it in
+   the response.
+4. Add authentication and environment-specific CORS origins.
+5. Use a shared cache for horizontally scaled deployments.
+6. Apply SSRF checks to discovered links and re-check DNS before navigation.
+7. Add readiness/liveness endpoints and more integration tests.
+8. Pin all infrastructure image versions and configure log/trace retention.

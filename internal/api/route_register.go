@@ -14,7 +14,11 @@ import (
 
 // defines all the routes
 func RegisterRoutes(engine *gin.Engine, metrics *observability.Metrics, tracer trace.Tracer, cache *cache.Cache) {
-	engine.Use(cors.Default())
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AddAllowHeaders("X-Request-ID")
+	corsConfig.AddExposeHeaders("X-Request-ID")
+	engine.Use(cors.New(corsConfig))
 
 	api := engine.Group("/api")
 	api.Use(middleware.LogMiddleware)

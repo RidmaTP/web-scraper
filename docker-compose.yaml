@@ -11,6 +11,9 @@ services:
     environment:
       - PORT=8000
       - CHROME_PATH=/usr/bin/chromium
+    depends_on:
+      - otel-collector
+      - promtail
     restart: unless-stopped
 
 
@@ -66,7 +69,33 @@ services:
     depends_on:
       - prometheus
       - tempo
+      - loki
     restart: unless-stopped
 
-# volumes:
-#   tempo-data:
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: loki
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ./infrastructure/loki/loki.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.5.0
+    container_name: promtail
+    command: ["-config.file=/etc/promtail/config.yaml"]
+    volumes:
+      - ./infrastructure/promtail/promtail.yaml:/etc/promtail/config.yaml:ro
+      - promtail-positions:/run/promtail
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+volumes:
+  loki-data:
+  promtail-positions:
