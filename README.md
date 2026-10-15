@@ -1,6 +1,6 @@
 # Web Analyzer
 
-Web Analyzer is a Go backend that renders and analyzes public web pages with
+Web Analyzer is a service that renders and analyzes public web pages in realtime with
 Chromium. It extracts page metadata, classifies links, checks link status, and
 streams results through Server-Sent Events (SSE).
 
